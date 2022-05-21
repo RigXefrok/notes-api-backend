@@ -1,56 +1,47 @@
+require('dotenv').config()
+require('./mongo')
+
 const express = require('express')
 const cors = require('cors')
-const app = express()
-const logger = require('./loggerMiddleware')
+const Note = require('./models/Note')
+const notFound = require('./middleWare/notFound')
+const handleError = require('./middleWare/handleError')
 
+const app = express()
 app.use(cors())
 app.use(express.json())
-
-app.use(logger)
-
-let notes = [
-  {
-    id: 1,
-    content: 'Me tengo que suscribiraenidudev en YouTube y Twitch',
-    date: '2019-05-30T17:30:31.0982',
-    important: true
-  },
-  {
-    id: 2,
-    content: 'Tengo que estudiar las clases del FullStack Bootcamp',
-    date: '2019-05-30T18:39:34.0912',
-    important: false
-  },
-  {
-    id: 3,
-    content: 'Repasar los retos de JS de midudev',
-    date: '2019-05-30T19:20:14.298z',
-    important: true
-  }
-]
 
 app.get('/', (request, response) => {
   response.send('<h1>Una vieja pisa paja cuando pasa paja pisa</h1>')
 })
 
 app.get('/api/notes', (request, response) => {
-  response.json(notes)
+  Note.find({}).then(notes => response.json(notes))
 })
 
-app.get('/api/notes/:id', (request, response) => {
-  const id = Number(request.params.id)
-  const note = notes.find(note => note.id === id)
-
-  if (!note) response.status(400).json({ error: 'I couldn`t find this note' })
-
-  response.json(note)
+app.get('/api/notes/:id', (request, response, next) => {
+  const { id } = request.params
+  Note.findById(id)
+    .then(note => response.json(note))
+    .catch(error => next(error))
 })
 
-app.delete('/api/notes/:id', (request, response) => {
-  const id = Number(request.params.id)
-  notes = notes.filter(note => note.id !== id)
+app.put('/api/notes/:id', (request, response, next) => {
+  const { id } = request.params
+  const { content, important } = request.body
 
-  response.status(204).end()
+  const newNoteInfo = { content, important }
+
+  Note.findByIdAndUpdate(id, newNoteInfo, { new: true })
+    .then(result => response.status(200).json(result))
+    .catch(error => next(error))
+})
+
+app.delete('/api/notes/:id', (request, response, next) => {
+  const { id } = request.params
+  Note.findByIdAndDelete(id)
+    .then(() => response.status(204).end())
+    .catch(error => next(error))
 })
 
 app.post('/api/notes', (request, response) => {
@@ -58,24 +49,22 @@ app.post('/api/notes', (request, response) => {
 
   if (!content) response.status(400).json({ error: 'note.content is missing' })
 
-  const ids = notes.map(note => note.id)
-  const maxId = Math.max(...ids)
-
-  const newNote = {
-    id: maxId + 1,
+  const newNote = new Note({
     content,
-    date: new Date().toISOString(),
-    important: typeof important !== 'undefined' ? important : false
-  }
-  notes = [...notes, newNote]
-  response.status(201).json(newNote)
+    date: new Date(),
+    important: important || false
+  })
+
+  newNote.save()
+    .then(() => response.status(201).json(newNote))
+    .catch(error => console.log(error))
 })
 
-app.use((request, response, next) => {
-  response.status(400).json({ error: 'Not found' })
-})
+// middleware
+app.use(notFound)
+app.use(handleError)
 
-const PORT = process.env.PORT || 3001
+const PORT = process.env.PORT
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`)

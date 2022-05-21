@@ -1,12 +1,13 @@
-POST http://localhost:3002/api/notes
+POST http://localhost:3001/api/notes
 Content-Type: application/json
 
 {
-  "content": "nueva nota"
+  "content": "nota para actualizar",
+  "important": true
 }
 
 
 ###
-POST http://localhost:3002/api/notes
+POST http://localhost:3001/api/notes
 Content-Type: application/json
 
