@@ -5,10 +5,12 @@ const express = require('express')
 const Sentry = require('@sentry/node')
 const Tracing = require('@sentry/tracing')
 const cors = require('cors')
-const Note = require('./models/Note')
 const notFound = require('./middleWare/notFound')
 const handleError = require('./middleWare/handleError')
 
+const usersRouter = require('./controllers/users')
+const notesRouter = require('./controllers/notes')
+const loginRouter = require('./controllers/login')
 const app = express()
 
 Sentry.init({
@@ -42,53 +44,11 @@ app.get('/', (request, response) => {
   response.send('<h1>Una vieja pisa paja cuando pasa paja pisa</h1>')
 })
 
-app.get('/api/notes', async (request, response) => {
-  const notes = await Note.find({})
-  response.json(notes)
-})
+// controllers
+app.use('/api/login', loginRouter)
+app.use('/api/notes', notesRouter)
 
-app.get('/api/notes/:id', (request, response, next) => {
-  const { id } = request.params
-  Note.findById(id)
-    .then(note => response.json(note))
-    .catch(error => next(error))
-})
-
-app.put('/api/notes/:id', (request, response, next) => {
-  const { id } = request.params
-  const { content, important } = request.body
-
-  const newNoteInfo = { content, important }
-
-  Note.findByIdAndUpdate(id, newNoteInfo, { new: true })
-    .then(result => response.status(200).json(result))
-    .catch(error => next(error))
-})
-
-app.delete('/api/notes/:id', async (request, response, next) => {
-  const { id } = request.params
-
-  await Note.findByIdAndDelete(id)
-  response.status(204).end()
-})
-
-app.post('/api/notes', async (request, response, next) => {
-  const { content, important } = request.body
-
-  if (!content) return response.status(400).json({ error: 'note.content is missing' })
-
-  const newNote = new Note({
-    content,
-    date: new Date(),
-    important: important || false
-  })
-  try {
-    const savedNote = await newNote.save()
-    response.status(201).json(savedNote)
-  } catch (error) {
-    next(error)
-  }
-})
+app.use('/api/users', usersRouter)
 
 // middleware
 app.use(notFound)

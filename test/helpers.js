@@ -25,8 +25,46 @@ const getAllFromNotes = async () => {
     response
   }
 }
+
+const initalUsers = [
+  {
+    username: 'xefrok',
+    name: 'seba',
+    password: '123456'
+  },
+  {
+    username: 'xXpepeXx',
+    name: 'juan jose carlos',
+    password: '1234'
+  }
+]
+
+const getAllFromUsers = async () => {
+  const response = await api.get('/api/users')
+  return {
+    ids: response.body.map(user => user.id),
+    names: response.body.map(user => user.name),
+    usernames: response.body.map(user => user.username),
+    notes: response.body.map(user => user.notes),
+    users: response.body,
+    response
+  }
+}
+const getFirstUser = async () => {
+  const { body } = await api.get('/api/users')
+  const firstUser = body[0]
+  return {
+    id: firstUser.id,
+    username: firstUser.username,
+    name: firstUser.name,
+    notes: firstUser.notes
+  }
+}
 module.exports = {
   api,
   initalNotes,
-  getAllFromNotes
+  getAllFromNotes,
+  initalUsers,
+  getFirstUser,
+  getAllFromUsers
 }

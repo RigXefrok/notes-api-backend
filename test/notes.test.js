@@ -82,19 +82,19 @@ describe('Create a Note', () => {
 describe('Delete a Note', () => {
   test('is possible with a valid id', async () => {
     const { notes } = await getAllFromNotes()
-    const noteToDelte = notes[0]
+    const noteToDelete = notes[0]
     await api
-      .delete(`/api/notes/${noteToDelte.id}`)
+      .delete(`/api/notes/${noteToDelete.id}`)
       .expect(204)
 
     const { response, contents } = await getAllFromNotes()
 
     expect(response.body).toHaveLength(initalNotes.length - 1)
 
-    expect(contents).not.toContain(noteToDelte.content)
+    expect(contents).not.toContain(noteToDelete.content)
   })
 
-  test('only can deleted notes that exist', async () => {
+  test('only can deleted valid notes', async () => {
     await api
       .delete('/api/notes/5')
       .expect(400)
@@ -105,7 +105,7 @@ describe('Delete a Note', () => {
 })
 
 describe('Update a Note', () => {
-  test('change the information of a note', async () => {
+  test('change the all information of a note', async () => {
     const { ids } = await getAllFromNotes()
     const indiceNota = 0
     const newNote = {
